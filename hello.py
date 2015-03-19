@@ -1,32 +1,42 @@
-#coding=utf-8
-'''
-Created on 2015年3月13日
+from flask import Flask, render_template, session, redirect, url_for
+from flask_script import Manager
+from flask_bootstrap import Bootstrap
+from flask_moment import Moment
+from flask_wtf import Form
+from wtforms import StringField, SubmitField
+from wtforms.validators import Required
 
-@author: wangxun
-'''
-from flask import Flask,render_template
-from flask import request
-from flask import make_response
-from flask import redirect
-from flask import abort
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'hard to guess string'
 
-@app.route('/')
+manager = Manager(app)
+bootstrap = Bootstrap(app)
+moment = Moment(app)
+
+
+class NameForm(Form):
+    name = StringField('What is your name?', validators=[Required()])
+    submit = SubmitField('Submit')
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
+
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    user_agent = request.headers.get('User-Agent')
-    return render_template('index.html')
+    form = NameForm()
+    if form.validate_on_submit():
+        session['name'] = form.name.data
+        return redirect(url_for('index'))
+    return render_template('index.html', form=form, name=session.get('name'))
 
-@app.route('/user/<name>')
-def user(name):
-    return render_template('user.html', name=name)
 
-
-@app.route('/user/<id>')
-def get_user(id):
-    user = 'load_user(id)'
-    if not user:
-        abort(404)
-    return '<h1>hello,%s</h1>'%id
-
-if __name__=="__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    manager.run()
