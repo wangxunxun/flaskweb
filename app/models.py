@@ -1,103 +1,62 @@
 #coding=utf-8
-'''
-Created on 2015年3月19日
-
-@author: xun
-'''
-from werkzeug.security import generate_password_hash, check_password_hash
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask import current_app
-from flask_login import UserMixin
-from app import db,login_manager
+import MySQLdb
+from _mysql import result
 
 
-class Role(db.Model):
-    __tablename__ = 'roles'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
-    users = db.relationship('User', backref='role', lazy='dynamic')
 
-    def __repr__(self):
-        return '<Role %r>' % self.name
+class mydb():
+    def __init__(self,host,user,passwd,db,port):
+        self.host = host
+        self.user = user
+        self.passwd = passwd
+        self.db = db
+        self.port = port
+    def mysqlconnect(self):
+        return MySQLdb.connect(host=self.host,user=self.user,passwd=self.passwd,db=self.db,port=self.port)
+    
+    def saveuser(self,username1,password1,mail1): 
+        createtableusers = """CREATE TABLE users (
 
+         username  CHAR(20) not null unique,
+         password CHAR(20) not null,
 
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(64), unique=True, index=True)
-    username = db.Column(db.String(64), unique=True, index=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
-    password_hash = db.Column(db.String(128))
-    confirmed = db.Column(db.Boolean, default=False)
+         mail char(60) unique,
+         dt timestamp not null default now(),
+         primary key(username)
+         )"""        
+    
+        conn=self.mysqlconnect()
+        cur=conn.cursor()
+        if cur.execute('show tables like "users"') == 0:
+            cur.execute(createtableusers)
+    #            cur.execute('drop table if exists message')
+#        try:
+    #            cur.execute(self.createteble)
 
-    @property
-    def password(self):
-        raise AttributeError('password is not a readable attribute')
+        print 1
+        cur.execute('insert into users(username,password,mail) values("%s","%s","%s")'%(username1,password1,mail1))
 
-    @password.setter
-    def password(self, password):
-        self.password_hash = generate_password_hash(password)
+        result = cur.fetchall()
 
-    def verify_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        print(result)
 
-    def generate_confirmation_token(self, expiration=3600):
-        s = Serializer(current_app.config['SECRET_KEY'], expiration)
-        return s.dumps({'confirm': self.id})
+        result = cur.fetchall()
+        print 1
+        print(result)
+        cur.close()
+        conn.commit()
+        conn.close()
 
-    def confirm(self, token):
-        s = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-        except:
-            return False
-        if data.get('confirm') != self.id:
-            return False
-        self.confirmed = True
-        db.session.add(self)
-        return True
-
-    def generate_reset_token(self, expiration=3600):
-        s = Serializer(current_app.config['SECRET_KEY'], expiration)
-        return s.dumps({'reset': self.id})
-
-    def reset_password(self, token, new_password):
-        s = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-        except:
-            return False
-        if data.get('reset') != self.id:
-            return False
-        self.password = new_password
-        db.session.add(self)
-        return True
-
-    def generate_email_change_token(self, new_email, expiration=3600):
-        s = Serializer(current_app.config['SECRET_KEY'], expiration)
-        return s.dumps({'change_email': self.id, 'new_email': new_email})
-
-    def change_email(self, token):
-        s = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-        except:
-            return False
-        if data.get('change_email') != self.id:
-            return False
-        new_email = data.get('new_email')
-        if new_email is None:
-            return False
-        if self.query.filter_by(email=new_email).first() is not None:
-            return False
-        self.email = new_email
-        db.session.add(self)
-        return True
-
-    def __repr__(self):
-        return '<User %r>' % self.username
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+#        except:
+#            conn.rollback()
+            
+if __name__ == '__main__':
+    host='69.164.202.55'
+    user='test'
+    passwd='test'
+    db='test'
+    port=3306
+    mydb1 = mydb(host,user,passwd,db,port)
+    mydb1.saveuser('ereer', '3434', '2323')
+    
+    
