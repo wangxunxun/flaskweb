@@ -6,3 +6,4 @@ Created on 2015年3月19日
 '''
 from app import app
 app.run(debug = True)
+test
