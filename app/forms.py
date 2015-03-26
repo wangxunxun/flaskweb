@@ -49,6 +49,10 @@ class PasswordResetRequestForm(Form):
     email = StringField('Email', validators=[Required(), Length(1, 64),
                                              Email()])
     submit = SubmitField('Reset Password')
+    
+    def validate_email(self, field):
+        if User.query.filter_by(email=field.data).first() is None:
+            raise ValidationError('Email not be registered.')
 
 
 class PasswordResetForm(Form):

@@ -144,9 +144,9 @@ def password_reset_request():
                        'email/reset_password',
                        user=user, token=token,
                        next=request.args.get('next'))
-        flash('An email with instructions to reset your password has been '
-              'sent to you.')
-        return redirect(url_for('login'))
+            flash('An email with instructions to reset your password has been '
+                  'sent to you.')
+            return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 
 
